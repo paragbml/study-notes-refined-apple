@@ -1,0 +1,34 @@
+
+export type NoteCategory = {
+  id: string;
+  name: string;
+};
+
+export type NoteItem = {
+  id: string;
+  title: string;
+  content: string;
+  categoryId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  type: "text" | "checklist" | "mindmap";
+  resources?: {
+    links?: { title: string; url: string }[];
+    images?: { id: string; src: string; alt: string }[];
+  };
+  checklist?: { id: string; text: string; checked: boolean }[];
+  mindmap?: { nodes: MindMapNode[]; edges: MindMapEdge[] };
+};
+
+export type MindMapNode = {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+};
+
+export type MindMapEdge = {
+  id: string;
+  source: string;
+  target: string;
+};

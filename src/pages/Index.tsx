@@ -1,13 +1,24 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { NotesProvider } from "@/context/NotesContext";
+import Sidebar from "@/components/Sidebar";
+import NotesList from "@/components/NotesList";
+import NoteEditor from "@/components/NoteEditor";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <NotesProvider>
+      <div className="min-h-screen flex flex-col md:flex-row">
+        <div className="w-full md:w-56 md:min-w-56">
+          <Sidebar />
+        </div>
+        <div className="w-full md:w-72 md:min-w-72 h-screen">
+          <NotesList />
+        </div>
+        <div className="flex-1 h-screen">
+          <NoteEditor />
+        </div>
       </div>
-    </div>
+    </NotesProvider>
   );
 };
 
