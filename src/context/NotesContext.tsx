@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { NoteItem, NoteCategory, NoteTag } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 
@@ -110,40 +109,79 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeNoteId, setActiveNoteId] = useState<string | null>("note1");
   const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
+  const [pendingSync, setPendingSync] = useState<boolean>(false);
 
-  // Sync to localStorage whenever data changes
+  // Debounced cloud sync function
+  const syncToCloud = useCallback(async () => {
+    if (syncStatus === "syncing") return; // Prevent multiple syncs
+    
+    setSyncStatus("syncing");
+    try {
+      // In a real app, this would make an API call to sync data
+      // For example: await api.syncNotes(notes);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setSyncStatus("synced");
+      
+      // Reset the pending flag
+      setPendingSync(false);
+      
+      // Mark all notes as synced
+      setNotes(prevNotes => 
+        prevNotes.map(note => ({
+          ...note,
+          cloudSynced: true
+        }))
+      );
+      
+      toast({
+        title: "Changes saved",
+        description: "All your notes have been synced to the cloud",
+      });
+    } catch (error) {
+      setSyncStatus("error");
+      toast({
+        title: "Sync failed",
+        description: "Could not sync your changes to the cloud",
+        variant: "destructive",
+      });
+    }
+  }, [syncStatus]);
+
+  // Save to localStorage whenever data changes
   useEffect(() => {
     localStorage.setItem("notes", JSON.stringify(notes));
     localStorage.setItem("categories", JSON.stringify(categories));
     localStorage.setItem("tags", JSON.stringify(tags));
     
-    // Simulate cloud sync
-    const syncToCloud = async () => {
-      setSyncStatus("syncing");
-      try {
-        // In a real app, this would make an API call to sync data
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        setSyncStatus("synced");
-        toast({
-          title: "Changes saved",
-          description: "All your notes have been synced to the cloud",
-        });
-      } catch (error) {
-        setSyncStatus("error");
-        toast({
-          title: "Sync failed",
-          description: "Could not sync your changes to the cloud",
-          variant: "destructive",
-        });
-      }
-    };
+    // Set pending sync flag if any notes need syncing
+    const hasUnsynced = notes.some(note => note.cloudSynced === false);
+    if (hasUnsynced) {
+      setPendingSync(true);
+    }
+  }, [notes, categories, tags]);
+  
+  // Handle auto-syncing with debounce
+  useEffect(() => {
+    if (!pendingSync) return;
     
     const syncTimer = setTimeout(() => {
       syncToCloud();
-    }, 1500);
+    }, 1500); // 1.5 second debounce
     
     return () => clearTimeout(syncTimer);
-  }, [notes, categories, tags]);
+  }, [pendingSync, syncToCloud]);
+  
+  // Auto-sync when user becomes online
+  useEffect(() => {
+    const handleOnline = () => {
+      if (pendingSync) {
+        syncToCloud();
+      }
+    };
+    
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [pendingSync, syncToCloud]);
 
   const addNote = (note: Omit<NoteItem, "id" | "createdAt" | "updatedAt" | "cloudSynced">) => {
     const newNote: NoteItem = {
@@ -170,6 +208,8 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
     if (activeNoteId === id) {
       setActiveNoteId(null);
     }
+    // Flag that we need to sync the deletion
+    setPendingSync(true);
   };
 
   const addCategory = (name: string) => {

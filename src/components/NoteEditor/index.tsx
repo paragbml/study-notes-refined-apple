@@ -1,10 +1,31 @@
 
+import { useEffect } from "react";
 import { useNotes } from "@/context/NotesContext";
 import UnifiedEditor from "./UnifiedEditor";
 
 const NoteEditor = () => {
-  const { getActiveNote } = useNotes();
+  const { getActiveNote, updateNote, syncStatus } = useNotes();
   const note = getActiveNote();
+
+  // Auto-save when component unmounts or note changes
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Force sync before page unload
+      if (note && syncStatus !== "synced") {
+        updateNote(note.id, { cloudSynced: false });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Trigger save when component unmounts
+      if (note) {
+        updateNote(note.id, { cloudSynced: false });
+      }
+    };
+  }, [note?.id, updateNote, syncStatus]);
 
   if (!note) {
     return (
