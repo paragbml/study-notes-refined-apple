@@ -1,4 +1,5 @@
 
+
 export type NoteCategory = {
   id: string;
   name: string;
@@ -40,3 +41,4 @@ export type MindMapEdge = {
   source: string;
   target: string;
 };
+

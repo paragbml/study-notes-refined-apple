@@ -1,7 +1,7 @@
 
 import { useNotes } from "@/context/NotesContext";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Link, CheckSquare } from "lucide-react";
+import { Plus, Trash2, Link, CheckSquare, Map } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
@@ -58,7 +58,7 @@ const NotesList = () => {
             {notes.map((note) => (
               <li
                 key={note.id}
-                className={`note-item ${note.id === activeNoteId ? "note-item-active" : ""} p-3 border-b border-border cursor-pointer hover:bg-muted/50 group`}
+                className={`note-item ${note.id === activeNoteId ? "note-item-active bg-muted" : ""} p-3 border-b border-border cursor-pointer hover:bg-muted/50 group`}
                 onClick={() => setActiveNoteId(note.id)}
               >
                 <div className="flex justify-between items-start">
@@ -81,6 +81,11 @@ const NotesList = () => {
                         {hasResources(note) && (
                           <Badge variant="outline" className="h-5 px-1 text-xs bg-muted/50">
                             <Link className="h-3 w-3" />
+                          </Badge>
+                        )}
+                        {hasMindMap(note) && (
+                          <Badge variant="outline" className="h-5 px-1 text-xs bg-muted/50">
+                            <Map className="h-3 w-3" />
                           </Badge>
                         )}
                       </div>

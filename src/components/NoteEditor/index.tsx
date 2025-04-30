@@ -1,9 +1,5 @@
 
 import { useNotes } from "@/context/NotesContext";
-import TextEditor from "./TextEditor";
-import ChecklistEditor from "./ChecklistEditor";
-import MindMapEditor from "./MindMapEditor";
-import ResourcesEditor from "./ResourcesEditor";
 import UnifiedEditor from "./UnifiedEditor";
 
 const NoteEditor = () => {
@@ -18,7 +14,7 @@ const NoteEditor = () => {
     );
   }
 
-  // For all note types, we now use the UnifiedEditor which has collapsible sections
+  // For all note types, we use the UnifiedEditor which has collapsible sections
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-hidden">
