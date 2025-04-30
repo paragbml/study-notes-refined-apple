@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, ArrowRight } from "lucide-react";
+import { Bot, ArrowRight, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AIAssistant = () => {
@@ -12,7 +12,29 @@ const AIAssistant = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [isConfigured, setIsConfigured] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
+
+  // Load API key from localStorage on component mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem("perplexityApiKey");
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+      setIsConfigured(true);
+    }
+  }, []);
+
+  const handleSaveApiKey = () => {
+    if (apiKey.trim()) {
+      localStorage.setItem("perplexityApiKey", apiKey);
+      setIsConfigured(true);
+      setShowSettings(false);
+      toast({
+        title: "API Key Saved",
+        description: "Your Perplexity API key has been saved.",
+      });
+    }
+  };
 
   const handleQuerySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,20 +44,23 @@ const AIAssistant = () => {
       setIsLoading(true);
       setResponse("");
       
-      if (!apiKey) {
+      const storedApiKey = localStorage.getItem("perplexityApiKey");
+      
+      if (!storedApiKey) {
         toast({
           title: "API Key Required",
           description: "Please enter your Perplexity API key in the settings.",
           variant: "destructive",
         });
         setIsLoading(false);
+        setShowSettings(true);
         return;
       }
       
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${storedApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -66,7 +91,7 @@ const AIAssistant = () => {
       console.error('Error querying Perplexity API:', error);
       toast({
         title: "Error",
-        description: "Failed to get a response from Perplexity AI. Please try again later.",
+        description: "Failed to get a response from Perplexity AI. Please check your API key and try again.",
         variant: "destructive",
       });
     } finally {
@@ -76,12 +101,22 @@ const AIAssistant = () => {
 
   return (
     <div className="h-full flex flex-col p-4">
-      <div className="flex items-center mb-4">
-        <Bot className="h-5 w-5 mr-2" />
-        <h2 className="text-lg font-medium">AI Research Assistant</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <Bot className="h-5 w-5 mr-2" />
+          <h2 className="text-lg font-medium">AI Research Assistant</h2>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowSettings(!showSettings)}
+        >
+          <Settings className="h-4 w-4 mr-2" />
+          Settings
+        </Button>
       </div>
       
-      {!isConfigured ? (
+      {showSettings && (
         <div className="p-4 border rounded-md mb-4">
           <h3 className="font-medium mb-2">Configure API Key</h3>
           <p className="text-sm text-muted-foreground mb-2">
@@ -95,35 +130,25 @@ const AIAssistant = () => {
               placeholder="Perplexity API Key"
               className="flex-1"
             />
-            <Button 
-              onClick={() => {
-                if (apiKey.trim()) {
-                  setIsConfigured(true);
-                  toast({
-                    title: "API Key Saved",
-                    description: "Your API key has been temporarily saved for this session.",
-                  });
-                }
-              }}
-            >
+            <Button onClick={handleSaveApiKey}>
               Save
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Note: Your API key is only stored in browser memory and will be cleared when you close the page.
+            Your API key is stored locally in your browser and never sent to our servers.
           </p>
         </div>
-      ) : null}
+      )}
       
       <form onSubmit={handleQuerySubmit} className="flex items-center gap-2 mb-4">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask a question or search for information..."
-          disabled={isLoading || !isConfigured}
+          disabled={isLoading}
           className="flex-1"
         />
-        <Button type="submit" disabled={isLoading || !isConfigured}>
+        <Button type="submit" disabled={isLoading}>
           {isLoading ? "Loading..." : <ArrowRight className="h-4 w-4" />}
         </Button>
       </form>
