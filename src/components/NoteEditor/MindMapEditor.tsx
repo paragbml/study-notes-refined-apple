@@ -74,7 +74,8 @@ const MindMapEditor = () => {
     if (!newNodeText.trim() || !note.mindmap) return;
 
     const newNodeId = `n${Date.now()}`;
-    const mainNode = note.mindmap.nodes[0] || { x: 300, y: 100 };
+    // Fix: Make sure we cast this to MindMapNode to ensure it has an id property
+    const mainNode = note.mindmap.nodes[0] || { id: newNodeId, text: "Main Topic", x: 300, y: 100 };
     const angle = Math.random() * Math.PI * 2;
     const distance = 100 + Math.random() * 50;
     
@@ -143,7 +144,7 @@ const MindMapEditor = () => {
         {note.mindmap?.nodes.map((node) => (
           <div
             key={node.id}
-            className="mind-map-node absolute transform -translate-x-1/2 -translate-y-1/2"
+            className="mind-map-node absolute transform -translate-x-1/2 -translate-y-1/2 bg-white p-2 rounded-md shadow-md cursor-move"
             style={{
               left: `${node.x}px`,
               top: `${node.y}px`

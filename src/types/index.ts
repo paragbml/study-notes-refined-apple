@@ -4,11 +4,18 @@ export type NoteCategory = {
   name: string;
 };
 
+export type NoteTag = {
+  id: string;
+  name: string;
+  color: string;
+};
+
 export type NoteItem = {
   id: string;
   title: string;
   content: string;
   categoryId: string;
+  tags?: string[]; // Array of tag IDs
   createdAt: Date;
   updatedAt: Date;
   type: "text" | "checklist" | "mindmap";

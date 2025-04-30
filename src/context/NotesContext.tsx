@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { NoteItem, NoteCategory } from "@/types";
+import { NoteItem, NoteCategory, NoteTag } from "@/types";
 
 type NotesContextType = {
   notes: NoteItem[];
   categories: NoteCategory[];
+  tags: NoteTag[];
   activeNoteId: string | null;
   activeCategoryId: string;
   setActiveNoteId: (id: string | null) => void;
@@ -13,8 +14,11 @@ type NotesContextType = {
   updateNote: (id: string, note: Partial<NoteItem>) => void;
   deleteNote: (id: string) => void;
   addCategory: (name: string) => void;
+  addTag: (name: string, color: string) => void;
+  deleteTag: (id: string) => void;
   getActiveNote: () => NoteItem | undefined;
   getNotesByCategory: (categoryId: string) => NoteItem[];
+  getNotesByTag: (tagId: string) => NoteItem[];
 };
 
 // Sample data
@@ -25,12 +29,19 @@ const initialCategories: NoteCategory[] = [
   { id: "cat3", name: "Research" }
 ];
 
+const initialTags: NoteTag[] = [
+  { id: "tag1", name: "Important", color: "#FF6B6B" },
+  { id: "tag2", name: "Exam", color: "#4ECDC4" },
+  { id: "tag3", name: "Research", color: "#FFD166" }
+];
+
 const initialNotes: NoteItem[] = [
   {
     id: "note1",
     title: "Introduction to React",
     content: "React is a JavaScript library for building user interfaces.",
     categoryId: "cat1",
+    tags: ["tag1", "tag2"],
     createdAt: new Date(),
     updatedAt: new Date(),
     type: "text"
@@ -40,6 +51,7 @@ const initialNotes: NoteItem[] = [
     title: "Biology Exam Prep",
     content: "",
     categoryId: "cat1",
+    tags: ["tag2"],
     createdAt: new Date(),
     updatedAt: new Date(),
     type: "checklist",
@@ -54,6 +66,7 @@ const initialNotes: NoteItem[] = [
     title: "Research Paper Ideas",
     content: "Potential topics for the semester research paper.",
     categoryId: "cat3",
+    tags: ["tag3"],
     createdAt: new Date(),
     updatedAt: new Date(),
     type: "mindmap",
@@ -78,6 +91,7 @@ const NotesContext = createContext<NotesContextType | undefined>(undefined);
 export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
   const [notes, setNotes] = useState<NoteItem[]>(initialNotes);
   const [categories, setCategories] = useState<NoteCategory[]>(initialCategories);
+  const [tags, setTags] = useState<NoteTag[]>(initialTags);
   const [activeNoteId, setActiveNoteId] = useState<string | null>("note1");
   const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
 
@@ -115,6 +129,26 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
     setCategories((prev) => [...prev, newCategory]);
   };
 
+  const addTag = (name: string, color: string) => {
+    const newTag = {
+      id: `tag${Date.now()}`,
+      name,
+      color
+    };
+    setTags((prev) => [...prev, newTag]);
+  };
+
+  const deleteTag = (id: string) => {
+    setTags((prev) => prev.filter((tag) => tag.id !== id));
+    // Also remove the tag from any notes that have it
+    setNotes((prev) => 
+      prev.map(note => ({
+        ...note,
+        tags: note.tags?.filter(tagId => tagId !== id)
+      }))
+    );
+  };
+
   const getActiveNote = () => {
     return notes.find((note) => note.id === activeNoteId);
   };
@@ -126,11 +160,16 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
     return notes.filter((note) => note.categoryId === categoryId);
   };
 
+  const getNotesByTag = (tagId: string) => {
+    return notes.filter((note) => note.tags?.includes(tagId));
+  };
+
   return (
     <NotesContext.Provider
       value={{
         notes,
         categories,
+        tags,
         activeNoteId,
         activeCategoryId,
         setActiveNoteId,
@@ -139,8 +178,11 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
         updateNote,
         deleteNote,
         addCategory,
+        addTag,
+        deleteTag,
         getActiveNote,
-        getNotesByCategory
+        getNotesByCategory,
+        getNotesByTag
       }}
     >
       {children}
