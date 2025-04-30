@@ -1,12 +1,11 @@
 
-import { useState } from "react";
 import { NotesProvider } from "@/context/NotesContext";
 import Sidebar from "@/components/Sidebar";
 import NotesList from "@/components/NotesList";
 import NoteEditor from "@/components/NoteEditor";
-import UnifiedEditor from "@/components/NoteEditor/UnifiedEditor";
-import AIAssistant from "@/components/AIAssistant";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AIAssistant from "@/components/AIAssistant";
+import { useState } from "react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<string>("notes");
@@ -31,7 +30,7 @@ const Index = () => {
             
             <div className="flex-1 overflow-hidden">
               <TabsContent value="notes" className="h-full">
-                <UnifiedEditor />
+                <NoteEditor />
               </TabsContent>
               
               <TabsContent value="ai" className="h-full">

@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { NoteItem, NoteCategory, NoteTag } from "@/types";
+import { toast } from "@/components/ui/use-toast";
 
 type NotesContextType = {
   notes: NoteItem[];
@@ -19,6 +20,7 @@ type NotesContextType = {
   getActiveNote: () => NoteItem | undefined;
   getNotesByCategory: (categoryId: string) => NoteItem[];
   getNotesByTag: (tagId: string) => NoteItem[];
+  syncStatus: "idle" | "syncing" | "synced" | "error";
 };
 
 // Sample data
@@ -44,7 +46,8 @@ const initialNotes: NoteItem[] = [
     tags: ["tag1", "tag2"],
     createdAt: new Date(),
     updatedAt: new Date(),
-    type: "text"
+    type: "text",
+    cloudSynced: true
   },
   {
     id: "note2",
@@ -59,7 +62,8 @@ const initialNotes: NoteItem[] = [
       { id: "cl1", text: "Study cell structure", checked: true },
       { id: "cl2", text: "Review photosynthesis", checked: false },
       { id: "cl3", text: "Practice diagrams", checked: false }
-    ]
+    ],
+    cloudSynced: true
   },
   {
     id: "note3",
@@ -69,7 +73,7 @@ const initialNotes: NoteItem[] = [
     tags: ["tag3"],
     createdAt: new Date(),
     updatedAt: new Date(),
-    type: "mindmap",
+    type: "text",
     mindmap: {
       nodes: [
         { id: "n1", text: "Research Topics", x: 300, y: 100 },
@@ -82,25 +86,72 @@ const initialNotes: NoteItem[] = [
         { id: "e2", source: "n1", target: "n3" },
         { id: "e3", source: "n1", target: "n4" }
       ]
-    }
+    },
+    cloudSynced: true
   }
 ];
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
 
 export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
-  const [notes, setNotes] = useState<NoteItem[]>(initialNotes);
-  const [categories, setCategories] = useState<NoteCategory[]>(initialCategories);
-  const [tags, setTags] = useState<NoteTag[]>(initialTags);
+  const [notes, setNotes] = useState<NoteItem[]>(() => {
+    // Load from localStorage if available
+    const savedNotes = localStorage.getItem("notes");
+    return savedNotes ? JSON.parse(savedNotes) : initialNotes;
+  });
+  const [categories, setCategories] = useState<NoteCategory[]>(() => {
+    const savedCategories = localStorage.getItem("categories");
+    return savedCategories ? JSON.parse(savedCategories) : initialCategories;
+  });
+  const [tags, setTags] = useState<NoteTag[]>(() => {
+    const savedTags = localStorage.getItem("tags");
+    return savedTags ? JSON.parse(savedTags) : initialTags;
+  });
   const [activeNoteId, setActiveNoteId] = useState<string | null>("note1");
   const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
 
-  const addNote = (note: Omit<NoteItem, "id" | "createdAt" | "updatedAt">) => {
+  // Sync to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem("notes", JSON.stringify(notes));
+    localStorage.setItem("categories", JSON.stringify(categories));
+    localStorage.setItem("tags", JSON.stringify(tags));
+    
+    // Simulate cloud sync
+    const syncToCloud = async () => {
+      setSyncStatus("syncing");
+      try {
+        // In a real app, this would make an API call to sync data
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        setSyncStatus("synced");
+        toast({
+          title: "Changes saved",
+          description: "All your notes have been synced to the cloud",
+        });
+      } catch (error) {
+        setSyncStatus("error");
+        toast({
+          title: "Sync failed",
+          description: "Could not sync your changes to the cloud",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    const syncTimer = setTimeout(() => {
+      syncToCloud();
+    }, 1500);
+    
+    return () => clearTimeout(syncTimer);
+  }, [notes, categories, tags]);
+
+  const addNote = (note: Omit<NoteItem, "id" | "createdAt" | "updatedAt" | "cloudSynced">) => {
     const newNote: NoteItem = {
       ...note,
       id: `note${Date.now()}`,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      cloudSynced: false
     };
     setNotes((prev) => [...prev, newNote]);
     setActiveNoteId(newNote.id);
@@ -109,7 +160,7 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
   const updateNote = (id: string, note: Partial<NoteItem>) => {
     setNotes((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, ...note, updatedAt: new Date() } : item
+        item.id === id ? { ...item, ...note, updatedAt: new Date(), cloudSynced: false } : item
       )
     );
   };
@@ -144,7 +195,8 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
     setNotes((prev) => 
       prev.map(note => ({
         ...note,
-        tags: note.tags?.filter(tagId => tagId !== id)
+        tags: note.tags?.filter(tagId => tagId !== id),
+        cloudSynced: false
       }))
     );
   };
@@ -182,7 +234,8 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
         deleteTag,
         getActiveNote,
         getNotesByCategory,
-        getNotesByTag
+        getNotesByTag,
+        syncStatus
       }}
     >
       {children}

@@ -25,6 +25,7 @@ export type NoteItem = {
   };
   checklist?: { id: string; text: string; checked: boolean }[];
   mindmap?: { nodes: MindMapNode[]; edges: MindMapEdge[] };
+  cloudSynced?: boolean; // To track sync status
 };
 
 export type MindMapNode = {
